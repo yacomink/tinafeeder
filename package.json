@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "An app to feed tina.",
   "main": "server.js",
+  "engines": {
+    "node": "7.7.3"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yacomink/tinafeeder.git"
@@ -13,9 +16,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "bean-sdk": "0.6.3",
     "async": "*",
+    "bean-sdk": "0.6.3",
+    "express": "^4.15.3",
     "moment": "^2.18.1",
-    "express": "*"
+    "package.json": "^2.0.1"
   }
 }
