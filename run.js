@@ -1,99 +1,109 @@
-let lightblue = require('bean-sdk/src/lightblue')
-let common = require('bean-sdk/src/cli/commands/common')
+let lightblue = require('bean-sdk/src/lightblue');
+let common = require('bean-sdk/src/cli/commands/common');
 let util = require('util');
-const buffer = require('buffer')
+const buffer = require('buffer');
 var moment = require('moment');
+let asyncToGenerator = require('./async-to-generator');
 
 let sdk = lightblue.sdk();
 
 opt = require('node-getopt').create([
-  [''  , 'dry'                , 'Dry run, do not feed or connect'],
-  // ['S' , 'short-with-arg=ARG'  , 'option with argument'],
-  ['M' , 'max=ARG'   , 'Max cycle length, default 60'],
-  ['m' , 'min=ARG'   , 'Min cycle length, default 5'],
-  ['c' , 'cycles=ARG'   , 'Cycles, default 150'],
-  // [''  , 'color[=COLOR]'       , 'COLOR is optional'],
-  // ['m' , 'multi-with-arg=ARG+' , 'multiple option with argument'],
-  // [''  , 'no-comment'],
-  // ['h' , 'help'                , 'display this help'],
-  // ['v' , 'version'             , 'show version']
-])              // create Getopt instance
-.bindHelp()     // bind option 'help' to default action
-.parseSystem(); // parse command line
+  ['', 'dry', 'Dry run, do not feed or connect'],
+  ['M', 'max=ARG', 'Max cycle length, default 60'],
+  ['m', 'min=ARG', 'Min cycle length, default 5'],
+  ['r', 'reset=ARG', 'Reset after x seconds'],
+  ['c', 'cycles=ARG', 'Cycles, default 150']]
+).bindHelp().parseSystem(); // parse command line
 
 let data = 'CMD-FEED';
 
-let interval = 5000;
 let feed_length = 2000;
 
 let cycles = opt.options.cycles || 150;
 let max_seconds = opt.options.max || 60;
 let min_seconds = opt.options.min || 5;
-let start_time = (new Date()).getTime();
+let start_time = new Date().getTime();
 
 // Ascii
-let buf = new buffer.Buffer(data, 'ascii')
+let buf = new buffer.Buffer(data, 'ascii');
 let device = null;
 var ran = 0;
 var errors = [];
 var promises = [];
 var elapsed = 0;
+var rewind_cycles = 0;
 
-function feed_cycles() {
-  for (var i = 0; i < cycles; i++) {
-    interval = Math.round((i / cycles) * (max_seconds-min_seconds) * 1000);
-    interval -= Math.round(interval * Math.random() * 0.25);
-    interval += min_seconds * 1000;
-    elapsed += interval;
-    promises[i] = new Promise(promise_to_feed);
-  }
-  console.log(util.format("Feeding %s cyles %s", cycles, moment.duration(elapsed).humanize(true)));
-  Promise.all(promises).then(commandComplete);
-}
+let feed_cycles = (() => {
+  var _ref = asyncToGenerator(function* () {
+    var intervals = [];
+    for (var i = 0; i < cycles; i++) {
+      let interval = Math.round((i - rewind_cycles) / cycles * (max_seconds - min_seconds) * 1000);
+      interval -= Math.round(interval * Math.random() * 0.30);
+      interval += min_seconds * 1000;
+      if (opt.options.reset && rewind_cycles === 0 &&
+          (elapsed + interval >= (opt.options.reset * 1000))) {
+          // Just crossed the reset boundary, the next cycle will start over at min_seconds
+          rewind_cycles = i;
+      }
+      intervals.push(interval);
+      elapsed += interval;
+    }
+    // console.log(intervals.join("\n"));
+    console.log(util.format("Feeding %s cyles in %sh %sm", cycles, moment.duration(elapsed).get('hours'), moment.duration(elapsed).get('minutes')));
 
-function promise_to_feed(resolve, reject) {
-  setTimeout( () => {
+    for (var i = 0; i < cycles; i++) {
+      yield (new Promise((resolve, reject) => promise_to_feed(resolve, reject, intervals[i])));
+    }
+
+    commandComplete();
+  });
+
+  return function feed_cycles() {
+    return _ref.apply(this, arguments);
+  };
+})();
+
+function promise_to_feed(resolve, reject, interval) {
+  setTimeout(() => {
+    console.log(moment().format() + ' Feeding after ' + moment.duration(new Date().getTime() - start_time).humanize() + ', Increment: ' + moment.duration(interval).seconds() + ' seconds' );
     if (opt.options.dry) {
-      console.log('RESOLVING AFTER ' + moment.duration((new Date()).getTime() - start_time).seconds());
       resolve();
     } else {
       feed(resolve);
     }
-  }, elapsed );
+  }, interval);
 }
 
-
-var feed = function(resolve) {
-  device.sendSerial(buf, (err) => {
+var feed = function (resolve) {
+  device.sendSerial(buf, err => {
     if (err) {
       console.log(err);
       errors.push(err);
     }
     resolve();
   });
-}
+};
 
 function commandComplete() {
-    console.log('Fed ' + cycles + ' cycles in ' + moment.duration(Math.round(elapsed/1000), 'seconds').humanize() + " with " + errors.length + " errors");
-    quit(0)
+  console.log('Fed ' + cycles + ' cycles in ' + moment.duration(new Date().getTime() - start_time).humanize() + " with " + errors.length + " errors");
+  quit(0);
 }
-
 
 function quit(rc) {
-  console.log('')
-  console.log('Quitting gracefully...')
-  lightblue.sdk().quitGracefully((err)=> {
-    console.log("Done.")
-    process.exit(rc)
-  })
+  console.log('');
+  console.log('Quitting gracefully...');
+  lightblue.sdk().quitGracefully(err => {
+    console.log("Done.");
+    process.exit(rc);
+  });
 }
+
 
 if (opt.options.dry) {
   feed_cycles();
 } else {
-  common.connectToDevice(sdk,
-                  null,
-                  '05d4ed5403d84995a17d69a480733be1',
-                  (connected_device) => {device = connected_device; feed_cycles();},
-                  commandComplete);
+  common.connectToDevice(sdk, null, process.env.BEAN_ADDRESS, connected_device => {
+    device = connected_device;feed_cycles();
+  }, commandComplete);
 }
+

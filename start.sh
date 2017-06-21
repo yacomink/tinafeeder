@@ -1,1 +1,0 @@
-node /usr/src/app/server.js

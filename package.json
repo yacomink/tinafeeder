@@ -1,10 +1,10 @@
 {
   "name": "tinafeeder",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "An app to feed tina.",
   "main": "server.js",
   "engines": {
-    "node": "7.7.3"
+    "node": "6.11.0"
   },
   "repository": {
     "type": "git",
@@ -16,9 +16,15 @@
   },
   "license": "MIT",
   "dependencies": {
-    "bean-sdk": "0.6.3",
+    "bean-sdk": "^0.6.3",
     "express": "^4.15.3",
     "moment": "^2.18.1",
+    "node-blink-security": "https://github.com/yacomink/node-blink-security/archive/tmp.tar.gz",
     "package.json": "^2.0.1"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/yacomink/tinafeeder/issues"
+  },
+  "homepage": "https://github.com/yacomink/tinafeeder#readme",
+  "author": "Andy Yaco-Mink"
 }
