@@ -4,6 +4,8 @@ FAILED=0
 
 echo "Testing bluetooth on RPI3. Make sure you have a bluetooth device enabled and visible."
 
+npm run babel && npm run start &
+
 echo "Attaching hci0..."
 if ! /usr/bin/hciattach /dev/ttyAMA0 bcm43xx 921600 noflow -; then
     echo "First try failed. Let's try another time."
@@ -29,4 +31,3 @@ hciconfig hci0 up
 #     echo "TEST PASSED"
 # fi
 
-npm run start
