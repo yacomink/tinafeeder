@@ -6,6 +6,7 @@ const Blink = require('node-blink-security');
 let lightblue = require('bean-sdk/src/lightblue');
 let common = require('bean-sdk/src/cli/commands/common');
 let sdk = lightblue.sdk();
+const sleep = require('sleep.async');
 
 function cameraAction(res, fn) {
     if (!blink) {
@@ -37,19 +38,18 @@ function takeSnap(res) {
     });
 }
 
+async function takeAndServeSnap(res) {
+    var starting_thumb = await blink.cameras.study.imageRefresh();
+    await blink.cameras.study.snapPicture();
+    while (starting_thumb === await blink.cameras.study.imageRefresh()) {
+      await sleep(1000);
+    }
+    serveSnap(res);
+}
+
 // reply to request with "Hello World!"
 app.get('/', function (req, res) {
   res.send('Hello World!');
-});
-
-app.get('/connect', function (req, res) {
-  common.connectToDevice(sdk, null, process.env.BEAN_ADDRESS, connected_device => {
-        connected_device.disconnect(err => {
-          res.send("Connected and disconnected!");
-        });
-  }, function(err) {
-        res.send(err);
-  });
 });
 
 app.get('/latest-snap', function (req, res) {
@@ -57,7 +57,11 @@ app.get('/latest-snap', function (req, res) {
 });
 
 app.get('/snap', function (req, res) {
-    cameraAction(res, takeSnap);
+    res.sendfile('./html/index.html');
+});
+
+app.get('/_snap', function (req, res) {
+    cameraAction(res, takeAndServeSnap);
 });
 
 var server = app.listen(process.env.PORT, function () {

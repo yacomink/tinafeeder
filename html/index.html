@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Snap</title>
+</head>
+<body>
+<span id="latest-snap-time"></span>
+<img src="/latest-snap" id="latest-snap">
+<script type="text/javascript">
+    var img = new Image();
+    img.onload = function() {
+        document.getElementById('latest-snap').src = img.src;
+        img.src = "/_snap?" + Math.random();
+        document.getElementById('latest-snap-time').innerHTML = new Date();
+    }
+    img.src = "/_snap?" + Math.random();
+</script>
+<script type="text/javascript">
+    navigator.wakeLock.request("display").then(
+        function successFunction() {
+            // success
+        },
+        function errorFunction() {
+            // error
+        }
+    );
+    //here system indicates CPU, GPU, radio, wifi etc.
+    navigator.wakeLock.request("system").then(
+        function successFunction() {
+            // success
+        },
+        function errorFunction() {
+            // error
+        }
+    ); 
+</script>
+
+</body>
+</html>

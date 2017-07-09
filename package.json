@@ -22,7 +22,8 @@
     "express": "^4.15.3",
     "moment": "^2.18.1",
     "node-blink-security": "https://github.com/yacomink/node-blink-security/archive/tmp.tar.gz",
-    "package.json": "^2.0.1"
+    "package.json": "^2.0.1",
+    "sleep.async": "^1.0.4"
   },
   "bugs": {
     "url": "https://github.com/yacomink/tinafeeder/issues"
