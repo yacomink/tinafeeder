@@ -4,9 +4,9 @@
     <title>Snap</title>
 </head>
 <body>
-<span id="latest-snap-time" style="position: absolute; display: inline-block; background: white; top:0; left: 0; font-size: 18px;"></span>
+<span id="latest-snap-time" style="position: absolute; display: inline-block; background: white; top:0; left: 0; font-size: 36px; padding: 4px;"></span>
 <img src="/latest-snap" id="latest-snap">
-<input type="button" onclick="enableNoSleep();return false;" value="Keep phone awake">
+<input type="button" onclick="enableNoSleep(); this.value = 'Ok, got it'; return false;" value="Keep phone awake" style="font-size: 36px; padding: 40px; border: 1px solid black; border-radius: 3px">
 <script type="text/javascript">
     var img = new Image();
     img.onload = function() {
@@ -25,6 +25,7 @@ var noSleep = new NoSleep();
 
 function enableNoSleep() {
   noSleep.enable();
+
   console.log('enabled');
 }
 
