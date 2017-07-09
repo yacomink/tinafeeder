@@ -44,7 +44,7 @@ app.get('/', function (req, res) {
 
 app.get('/connect', function (req, res) {
   common.connectToDevice(sdk, null, process.env.BEAN_ADDRESS, connected_device => {
-        lightblue.sdk().quitGracefully(err => {
+        connected_device.disconnect(err => {
           res.send("Connected and disconnected!");
         });
   }, function(err) {
