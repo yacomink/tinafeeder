@@ -4,8 +4,9 @@
     <title>Snap</title>
 </head>
 <body>
-<span id="latest-snap-time"></span>
+<span id="latest-snap-time" style="position: absolute; display: inline-block; background: white; top:0; left: 0; font-size: 18px;"></span>
 <img src="/latest-snap" id="latest-snap">
+<input type="button" onclick="enableNoSleep();return false;" value="Keep phone awake">
 <script type="text/javascript">
     var img = new Image();
     img.onload = function() {
@@ -24,12 +25,9 @@ var noSleep = new NoSleep();
 
 function enableNoSleep() {
   noSleep.enable();
-  document.removeEventListener('touchstart', enableNoSleep, false);
+  console.log('enabled');
 }
 
-// Enable wake lock.
-// (must be wrapped in a user input event handler e.g. a mouse or touch handler)
-document.addEventListener('touchstart', enableNoSleep, false);
 </script>
 
 
