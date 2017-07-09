@@ -3,11 +3,10 @@ let common = require('bean-sdk/src/cli/commands/common');
 let util = require('util');
 const buffer = require('buffer');
 var moment = require('moment');
-let asyncToGenerator = require('./async-to-generator');
 
 let sdk = lightblue.sdk();
 
-opt = require('node-getopt').create([
+var opt = require('node-getopt').create([
   ['', 'dry', 'Dry run, do not feed or connect'],
   ['M', 'max=ARG', 'Max cycle length, default 60'],
   ['m', 'min=ARG', 'Min cycle length, default 5'],
@@ -33,8 +32,7 @@ var promises = [];
 var elapsed = 0;
 var rewind_cycles = 0;
 
-let feed_cycles = (() => {
-  var _ref = asyncToGenerator(function* () {
+async function feed_cycles() {
     var intervals = [];
     for (var i = 0; i < cycles; i++) {
       let interval = Math.round((i - rewind_cycles) / cycles * (max_seconds - min_seconds) * 1000);
@@ -52,16 +50,11 @@ let feed_cycles = (() => {
     console.log(util.format("Feeding %s cyles in %sh %sm", cycles, moment.duration(elapsed).get('hours'), moment.duration(elapsed).get('minutes')));
 
     for (var i = 0; i < cycles; i++) {
-      yield (new Promise((resolve, reject) => promise_to_feed(resolve, reject, intervals[i])));
+      await new Promise((resolve, reject) => promise_to_feed(resolve, reject, intervals[i]));
     }
 
     commandComplete();
-  });
-
-  return function feed_cycles() {
-    return _ref.apply(this, arguments);
-  };
-})();
+}
 
 function promise_to_feed(resolve, reject, interval) {
   setTimeout(() => {
