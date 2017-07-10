@@ -2,26 +2,40 @@ let lightblue = require('bean-sdk/src/lightblue');
 let common = require('bean-sdk/src/cli/commands/common');
 let util = require('util');
 const buffer = require('buffer');
+const sleep = require('sleep.async');
 var moment = require('moment');
 
 let sdk = lightblue.sdk();
 
 var opt = require('node-getopt').create([
   ['', 'dry', 'Dry run, do not feed or connect'],
+
+  // Fixed-time run settings
+  ['t', 'run_time=ARG', 'How long to run for'],
+  ['i', 'interval=ARG', 'What interval length to use'],
+
+  // Fixed-cycle run settings
   ['M', 'max=ARG', 'Max cycle length, default 60'],
   ['m', 'min=ARG', 'Min cycle length, default 5'],
   ['r', 'reset=ARG', 'Reset after x seconds'],
-  ['c', 'cycles=ARG', 'Cycles, default 150']]
+  ['c', 'cycles=ARG', 'Cycles, default 150']
+  ]
 ).bindHelp().parseSystem(); // parse command line
 
 let data = 'CMD-FEED';
 
 let feed_length = 2000;
+const FIXED_TIME = 1;
+const FIXED_CYCLES = 2;
 
 let cycles = opt.options.cycles || 150;
 let max_seconds = opt.options.max || 60;
 let min_seconds = opt.options.min || 5;
+let interval = opt.options.interval || 5;
+let run_time = opt.options.run_time || 5 * 60;
 let start_time = new Date().getTime();
+
+let run_type = opt.options.run_time ? FIXED_TIME : FIXED_CYCLES;
 
 // Ascii
 let buf = new buffer.Buffer(data, 'ascii');
@@ -32,7 +46,8 @@ var promises = [];
 var elapsed = 0;
 var rewind_cycles = 0;
 
-async function feed_cycles() {
+function calculate_fixed_cycles_intervals() {
+
     var intervals = [];
     for (var i = 0; i < cycles; i++) {
       let interval = Math.round((i - rewind_cycles) / cycles * (max_seconds - min_seconds) * 1000);
@@ -47,33 +62,48 @@ async function feed_cycles() {
       elapsed += interval;
     }
     // console.log(intervals.join("\n"));
-    console.log(util.format("Feeding %s cyles in %sh %sm", cycles, moment.duration(elapsed).get('hours'), moment.duration(elapsed).get('minutes')));
+    return intervals;
 
-    for (var i = 0; i < cycles; i++) {
-      await new Promise((resolve, reject) => promise_to_feed(resolve, reject, intervals[i]));
+}
+
+function calculate_fixed_time_intervals() {
+
+    var intervals = [];
+    var elapsed = 0;
+    while (elapsed < opt.options.run_time) {
+      intervals.push(opt.options.interval * 1000);
+      elapsed += opt.options.interval*1;
+    }
+    return intervals;
+
+}
+
+async function feed_cycles() {
+    var intervals = (run_type == FIXED_TIME) ? 
+                    calculate_fixed_time_intervals() :
+                    calculate_fixed_cycles_intervals();
+
+    var total_time = intervals.reduce((carry, val) => carry*1 + val*1);
+
+    console.log(util.format("Feeding %s cyles in %sh %sm", 
+                            intervals.length,
+                            moment.duration(total_time).get('hours'),
+                            moment.duration(total_time).get('minutes')));
+
+    for (var i = 0; i < intervals.length; i++) {
+      await sleep(intervals[i], !opt.options.dry ? feed : null);
+      console.log(moment().format() + ' Feeding after ' + moment.duration(new Date().getTime() - start_time).humanize() + ', Increment: ' + moment.duration(intervals[i]).seconds() + ' seconds' );
     }
 
     commandComplete();
 }
 
-function promise_to_feed(resolve, reject, interval) {
-  setTimeout(() => {
-    console.log(moment().format() + ' Feeding after ' + moment.duration(new Date().getTime() - start_time).humanize() + ', Increment: ' + moment.duration(interval).seconds() + ' seconds' );
-    if (opt.options.dry) {
-      resolve();
-    } else {
-      feed(resolve);
-    }
-  }, interval);
-}
-
-var feed = function (resolve) {
+var feed = function () {
   device.sendSerial(buf, err => {
     if (err) {
       console.log(err);
       errors.push(err);
     }
-    resolve();
   });
 };
 
@@ -85,6 +115,9 @@ function commandComplete() {
 function quit(rc) {
   console.log('');
   console.log('Quitting gracefully...');
+  if (opt.options.dry) {
+    process.exit(rc);
+  }
   lightblue.sdk().quitGracefully(err => {
     console.log("Done.");
     process.exit(rc);
@@ -96,7 +129,9 @@ if (opt.options.dry) {
   feed_cycles();
 } else {
   common.connectToDevice(sdk, null, process.env.BEAN_ADDRESS, connected_device => {
-    device = connected_device;feed_cycles();
+    console.log('Connected to device');
+    device = connected_device;
+    feed_cycles();
   }, commandComplete);
 }
 
