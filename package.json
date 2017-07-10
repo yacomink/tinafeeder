@@ -20,9 +20,9 @@
     "babel-polyfill": "^6.23.0",
     "bean-sdk": "^0.6.3",
     "express": "^4.15.3",
-    "getopt": "^0.1.0",
     "moment": "^2.18.1",
     "node-blink-security": "https://github.com/yacomink/node-blink-security/archive/tmp.tar.gz",
+    "node-getopt": "^0.2.3",
     "package.json": "^2.0.1",
     "sleep.async": "^1.0.4"
   },
