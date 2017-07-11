@@ -27,6 +27,7 @@ function cameraAction(res, fn) {
       res.send(ex);
     }
 }
+
 function serveSnap(res) {
     var starting_thumb = blink.cameras.study.thumbnail;
     blink.cameras.study
@@ -71,7 +72,9 @@ app.get('/_snap', function (req, res) {
 
 app.get('/_spawn', function(req, res) {
   var child = child_process.spawn('node',
-        ['-r', 'babel-polyfill', './build/bin/run.js', '--dry', '--run_time=30', '--interval=5' ],
+        ['-r', 'babel-polyfill', './build/bin/run.js', '--min=12', 
+        '--max=23', '--reset=600',
+        '--cycles=125' ],
         { cwd: process.cwd, detached: true, stdio: 'inherit' });
   child.unref();
   res.send();

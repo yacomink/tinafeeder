@@ -51,8 +51,8 @@ function calculate_fixed_cycles_intervals() {
     var intervals = [];
     for (var i = 0; i < cycles; i++) {
       let interval = Math.round((i - rewind_cycles) / cycles * (max_seconds - min_seconds) * 1000);
-      interval -= Math.round(interval * Math.random() * 0.30);
       interval += min_seconds * 1000;
+      interval -= Math.round(interval * Math.random() * 0.30);
       if (opt.options.reset && rewind_cycles === 0 &&
           (elapsed + interval >= (opt.options.reset * 1000))) {
           // Just crossed the reset boundary, the next cycle will start over at min_seconds
