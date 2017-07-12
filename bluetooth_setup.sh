@@ -17,12 +17,12 @@ hciconfig hci0 up
 
 npm run start
 
-# echo "Scan for devices..."
-# if [ `hcitool scan | wc -l` -le 1 ]; then
-#     FAILED=1
-# else
-#     FAILED=0
-# fi
+echo "Scan for devices..."
+if [ `hcitool scan | wc -l` -le 1 ]; then
+    FAILED=1
+else
+    FAILED=0
+fi
 
 # echo "Test finished. App configured to not exit. Restart the app if you want to retest."
 
