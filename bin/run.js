@@ -22,8 +22,6 @@ var opt = require('node-getopt').create([
   ]
 ).bindHelp().parseSystem(); // parse command line
 
-let data = 'CMD-FEED';
-
 let feed_length = 2000;
 const FIXED_TIME = 1;
 const FIXED_CYCLES = 2;
@@ -38,7 +36,6 @@ let start_time = new Date().getTime();
 let run_type = opt.options.run_time ? FIXED_TIME : FIXED_CYCLES;
 
 // Ascii
-let buf = new buffer.Buffer(data, 'ascii');
 let device = null;
 var ran = 0;
 var errors = [];
@@ -85,20 +82,27 @@ async function feed_cycles() {
 
     var total_time = intervals.reduce((carry, val) => carry*1 + val*1);
 
-    console.log(util.format("Feeding %s cyles in %sh %sm", 
-                            intervals.length,
-                            moment.duration(total_time).get('hours'),
-                            moment.duration(total_time).get('minutes')));
+    console.log("Feeding %s cyles in %sh %sm", 
+                intervals.length,
+                moment.duration(total_time).get('hours'),
+                moment.duration(total_time).get('minutes'));
 
     for (var i = 0; i < intervals.length; i++) {
       await sleep(intervals[i], !opt.options.dry ? feed : null);
-      console.log(moment().format() + ' Feeding after ' + moment.duration(new Date().getTime() - start_time).humanize() + ', Increment: ' + moment.duration(intervals[i]).seconds() + ' seconds' );
+      if (!opt.options.dry) {
+        feed();        
+      }
+      console.log('%s Fed iteration %d after %s second delay',
+                  moment().format(),
+                  i + 1,
+                  moment.duration(intervals[i]).seconds());
     }
 
     commandComplete();
 }
 
 var feed = function () {
+  let buf = new buffer.Buffer('CMD-FEED', 'ascii');
   device.sendSerial(buf, err => {
     if (err) {
       console.log(err);
@@ -108,7 +112,10 @@ var feed = function () {
 };
 
 function commandComplete() {
-  console.log('Fed ' + cycles + ' cycles in ' + moment.duration(new Date().getTime() - start_time).humanize() + " with " + errors.length + " errors");
+  console.log("Fed %d cycles in %s with %d errors",
+              cycles,
+              moment.duration(new Date().getTime() - start_time).humanize(),
+              errors.length);
   quit(0);
 }
 
